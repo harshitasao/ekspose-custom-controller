@@ -27,6 +27,17 @@ func main() {
 	if err != nil {
 		fmt.Printf("error in getting clientset %s\n", err.Error())
 	}
+
+	ch := make(chan struct{})
 	informer := informers.NewSharedInformerFactory(clientset, 10*time.Minute)
+
+	// creating new custom controller
+	c := newController(clientset, informer.Apps().V1().Deployments())
+
+	// starting the informer
+	informer.Start(ch)
+
+	// running the controller
+	c.run(ch)
 	fmt.Println(informer)
 }
