@@ -7,6 +7,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
@@ -122,6 +123,12 @@ func (c *controller) syncDeployment(ns, name string) error {
 	// create ingress
 
 	return nil
+}
+
+func createIngress(clientset kubernetes.Interface, ctx context.Context, svc corev1.Service) error {
+	ingress := netv1.Ingress{}
+	_, err := clientset.NetworkingV1().Ingresses(svc.Namespace).Create(ctx, &ingress, metav1.CreateOptions{})
+	return err
 }
 
 // func for getting labels from the backend pods
