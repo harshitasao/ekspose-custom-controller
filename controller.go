@@ -115,18 +115,51 @@ func (c *controller) syncDeployment(ns, name string) error {
 			},
 		},
 	}
-	_, err = c.clientset.CoreV1().Services(ns).Create(ctx, &svc, metav1.CreateOptions{})
+	s, err := c.clientset.CoreV1().Services(ns).Create(ctx, &svc, metav1.CreateOptions{})
 	if err != nil {
 		fmt.Printf("creating service %v", err.Error())
 	}
 
 	// create ingress
 
-	return nil
+	return createIngress(c.clientset, ctx, s)
 }
 
-func createIngress(clientset kubernetes.Interface, ctx context.Context, svc corev1.Service) error {
-	ingress := netv1.Ingress{}
+func createIngress(clientset kubernetes.Interface, ctx context.Context, svc *corev1.Service) error {
+	pathType := "Prefix"
+	ingress := netv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      svc.Name,
+			Namespace: svc.Namespace,
+			Annotations: map[string]string{
+				"nginx.ingress.kubernetes.io/rewrite-target": "/",
+			},
+		},
+		Spec: netv1.IngressSpec{
+			Rules: []netv1.IngressRule{
+				{
+					IngressRuleValue: netv1.IngressRuleValue{
+						HTTP: &netv1.HTTPIngressRuleValue{
+							Paths: []netv1.HTTPIngressPath{
+								{
+									Path:     fmt.Sprintf("/%s", svc.Name),
+									PathType: (*netv1.PathType)(&pathType),
+									Backend: netv1.IngressBackend{
+										Service: &netv1.IngressServiceBackend{
+											Name: svc.Name,
+											Port: netv1.ServiceBackendPort{
+												Number: 80,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 	_, err := clientset.NetworkingV1().Ingresses(svc.Namespace).Create(ctx, &ingress, metav1.CreateOptions{})
 	return err
 }
