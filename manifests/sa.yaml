@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: "2023-10-18T11:30:12Z"
+  name: ekspose-sa
+  namespace: ekspose
+  resourceVersion: "7249"
+  uid: f229c2a6-4e63-4d35-b1d0-b3c82f25c38f
